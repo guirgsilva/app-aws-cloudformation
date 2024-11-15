@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Application Load Balancer Configuration'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+  
+  VpcId:
+    Type: String
+    Description: VPC ID
+
+  PublicSubnets:
+    Type: String
+    Description: Comma-separated list of public subnet IDs
+
+  SecurityGroupId:
+    Type: String
+    Description: Security Group ID for ALB
+
+Resources:
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-alb
+      Subnets: !Split [',', !Ref PublicSubnets]
+      SecurityGroups: 
+        - !Ref SecurityGroupId
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-alb
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref DefaultTargetGroup
+
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-default-tg
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-default-tg
+
+Outputs:
+  AlbArn:
+    Description: Application Load Balancer ARN
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbArn
+
+  AlbDnsName:
+    Description: Application Load Balancer DNS Name
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub ${AWS::StackName}-AlbDnsName
+
+  DefaultTargetGroupArn:
+    Description: Default Target Group ARN
+    Value: !Ref DefaultTargetGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-DefaultTargetGroupArn

@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Main Stack for Web Application Infrastructure'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name for resource tagging and naming
+
+  TemplateBucket:
+    Type: String
+    Description: Name of the S3 bucket containing nested stack templates
+
+  # VPC Parameters
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block for VPC
+
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: CIDR block for Public Subnet 1
+
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: CIDR block for Public Subnet 2
+
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 10.0.3.0/24
+    Description: CIDR block for Private Subnet 1
+
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 10.0.4.0/24
+    Description: CIDR block for Private Subnet 2
+
+  # EC2 Parameters
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: EC2 instance type
+
+  MinSize:
+    Type: Number
+    Default: 2
+    Description: Minimum number of instances in ASG
+
+  MaxSize:
+    Type: Number
+    Default: 4
+    Description: Maximum number of instances in ASG
+
+  DesiredCapacity:
+    Type: Number
+    Default: 2
+    Description: Desired number of instances in ASG
+
+  # RDS Parameters
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.medium
+    Description: Database instance class
+
+  DBName:
+    Type: String
+    Description: Database name
+
+  DBUsername:
+    Type: String
+    Description: Database master username
+    MinLength: 1
+
+  DBPassword:
+    Type: String
+    Description: Database master password
+    MinLength: 8
+    NoEcho: true
+
+Resources:
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/network/vpc.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcCidr: !Ref VpcCidr
+        PublicSubnet1Cidr: !Ref PublicSubnet1Cidr
+        PublicSubnet2Cidr: !Ref PublicSubnet2Cidr
+        PrivateSubnet1Cidr: !Ref PrivateSubnet1Cidr
+        PrivateSubnet2Cidr: !Ref PrivateSubnet2Cidr
+
+  SecurityGroupsStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NetworkStack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/network/security-groups.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SecurityGroupsStack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/compute/alb.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PublicSubnets: !GetAtt NetworkStack.Outputs.PublicSubnets
+        SecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.AlbSecurityGroupId
+
+  StorageStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/storage/s3.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        BucketName: !Sub '${EnvironmentName}-static-assets-${AWS::AccountId}'
+
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SecurityGroupsStack
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/database/rds.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PrivateSubnets: !GetAtt NetworkStack.Outputs.PrivateSubnets
+        SecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.DbSecurityGroupId
+        DBInstanceClass: !Ref DBInstanceClass
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
+
+  AutoScalingStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [LoadBalancerStack, DatabaseStack]
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/compute/asg.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        VpcId: !GetAtt NetworkStack.Outputs.VpcId
+        PrivateSubnets: !GetAtt NetworkStack.Outputs.PrivateSubnets
+        SecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.AppSecurityGroupId
+        TargetGroupArn: !GetAtt LoadBalancerStack.Outputs.DefaultTargetGroupArn
+        InstanceType: !Ref InstanceType
+        MinSize: !Ref MinSize
+        MaxSize: !Ref MaxSize
+        DesiredCapacity: !Ref DesiredCapacity
+
+  MonitoringStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [AutoScalingStack, LoadBalancerStack, DatabaseStack]
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/monitoring/cloudwatch.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        AlbArn: !GetAtt LoadBalancerStack.Outputs.AlbArn
+        AutoScalingGroupName: !GetAtt AutoScalingStack.Outputs.AutoScalingGroupName
+        DBInstanceIdentifier: !GetAtt DatabaseStack.Outputs.DBInstanceIdentifier
+  CICDStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: [AutoScalingStack, LoadBalancerStack]
+    Properties:
+      TemplateURL: !Sub 'https://${TemplateBucket}.s3.${AWS::Region}.amazonaws.com/templates/cicd/pipeline.yaml'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !GetAtt NetworkStack.Outputs.VpcId
+    Export:
+      Name: !Sub ${AWS::StackName}-VpcId
+
+  PublicSubnets:
+    Description: Public Subnet IDs
+    Value: !GetAtt NetworkStack.Outputs.PublicSubnets
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicSubnets
+
+  PrivateSubnets:
+    Description: Private Subnet IDs
+    Value: !GetAtt NetworkStack.Outputs.PrivateSubnets
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateSubnets
+
+  LoadBalancerDNS:
+    Description: Application Load Balancer DNS Name
+    Value: !GetAtt LoadBalancerStack.Outputs.AlbDnsName
+    Export:
+      Name: !Sub ${AWS::StackName}-LoadBalancerDNS
+
+  DatabaseEndpoint:
+    Description: RDS Database Endpoint
+    Value: !GetAtt DatabaseStack.Outputs.DBEndpoint
+    Export:
+      Name: !Sub ${AWS::StackName}-DatabaseEndpoint

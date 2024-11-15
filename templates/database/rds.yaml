@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'RDS Multi-AZ Configuration'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+
+  VpcId:
+    Type: String
+    Description: VPC ID
+
+  PrivateSubnets:
+    Type: String
+    Description: Comma-separated list of private subnet IDs
+
+  SecurityGroupId:
+    Type: String
+    Description: Security Group ID for RDS
+
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.medium
+    AllowedValues: 
+      - db.t3.medium
+      - db.t3.large
+      - db.r5.large
+
+  DBName:
+    Type: String
+    Default: appdb
+
+  DBUsername:
+    Type: String
+    NoEcho: true
+    Default: admin
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${EnvironmentName}-db-subnet-group
+      DBSubnetGroupDescription: Subnet group for RDS instances
+      SubnetIds: !Split [',', !Ref PrivateSubnets]
+
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: mysql8.0
+      Description: Custom parameter group for MySQL 8.0
+      Parameters:
+        max_connections: '1000'
+        character_set_server: 'utf8mb4'
+        collation_server: 'utf8mb4_unicode_ci'
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBName: !Ref DBName
+      Engine: mysql
+      EngineVersion: 8.0
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: 20
+      StorageType: gp3
+      MultiAZ: true
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref SecurityGroupId
+      DBParameterGroupName: !Ref DBParameterGroup
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: 03:00-04:00
+      PreferredMaintenanceWindow: Mon:04:00-Mon:05:00
+      PubliclyAccessible: false
+      EnablePerformanceInsights: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-database
+
+Outputs:
+  DBEndpoint:
+    Description: Database Endpoint
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-DBEndpoint
+
+  DBPort:
+    Description: Database Port
+    Value: !GetAtt DBInstance.Endpoint.Port
+    Export:
+      Name: !Sub ${AWS::StackName}-DBPort
+
+  DBInstanceIdentifier:
+    Description: Database Instance Identifier
+    Value: !Ref DBInstance
+    Export:
+      Name: !Sub ${AWS::StackName}-DBInstanceIdentifier

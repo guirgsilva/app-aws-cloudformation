@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Auto Scaling Group Configuration'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+
+  VpcId:
+    Type: String
+    Description: VPC ID
+
+  PrivateSubnets:
+    Type: String
+    Description: Comma-separated list of private subnet IDs
+
+  SecurityGroupId:
+    Type: String
+    Description: Security Group ID for EC2 instances
+
+  TargetGroupArn:
+    Type: String
+    Description: Target Group ARN for ALB
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: 
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: EC2 instance type
+
+  MinSize:
+    Type: Number
+    Default: 2
+    Description: Minimum number of instances
+
+  MaxSize:
+    Type: Number
+    Default: 4
+    Description: Maximum number of instances
+
+  DesiredCapacity:
+    Type: Number
+    Default: 2
+    Description: Desired number of instances
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-0e731c8a588258d0d  # Amazon Linux 2023 AMI
+    us-east-2:
+      AMI: ami-0ab0629dba5ae551d
+    us-west-1:
+      AMI: ami-0b5f033d8c6bb1153
+    us-west-2:
+      AMI: ami-0ceecbb0f30a902a6
+    eu-west-1:
+      AMI: ami-0694d931cee176e7d
+    eu-central-1:
+      AMI: ami-06dd92ecc74fdfb36
+    ap-southeast-1:
+      AMI: ami-0db3d62611ab9096d
+    ap-southeast-2:
+      AMI: ami-0d6fb2916ee0ab9fe
+    ap-northeast-1:
+      AMI: ami-0d52744d6551d851e
+    sa-east-1:
+      AMI: ami-0af6e9042ea5a4e3e
+
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${EnvironmentName}-launch-template
+      LaunchTemplateData:
+        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds: 
+          - !Ref SecurityGroupId
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            yum update -y
+            yum install -y aws-cli
+            yum install -y docker
+            systemctl start docker
+            systemctl enable docker
+            
+            # Install CloudWatch Agent
+            yum install -y amazon-cloudwatch-agent
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c ssm:AmazonCloudWatch-linux
+            systemctl start amazon-cloudwatch-agent
+            
+            # Add your application deployment commands here
+            docker run -d -p 80:80 nginx:latest
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-asg
+      VPCZoneIdentifier: !Split [',', !Ref PrivateSubnets]
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: !Ref MinSize
+      MaxSize: !Ref MaxSize
+      DesiredCapacity: !Ref DesiredCapacity
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      TargetGroupARNs: 
+        - !Ref TargetGroupArn
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-app-server
+          PropagateAtLaunch: true
+
+  # Scaling Policies
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 70.0
+
+  # Memory based scaling policy
+  ScaleOnMemoryPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        CustomizedMetricSpecification:
+          MetricName: MemoryUtilization
+          Namespace: AWS/EC2
+          Statistic: Average
+          Unit: Percent
+          Dimensions:
+            - Name: AutoScalingGroupName
+              Value: !Ref AutoScalingGroup
+        TargetValue: 70.0
+
+Outputs:
+  AutoScalingGroupName:
+    Description: Auto Scaling Group Name
+    Value: !Ref AutoScalingGroup
+    Export:
+      Name: !Sub ${EnvironmentName}-AutoScalingGroupName  
+
+  LaunchTemplateId:
+    Description: Launch Template ID
+    Value: !Ref LaunchTemplate
+    Export:
+      Name: !Sub ${AWS::StackName}-LaunchTemplateId
+
+  AutoScalingGroupARN:
+    Description: Auto Scaling Group ARN
+    Value: !Sub arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}
+    Export:
+      Name: !Sub ${AWS::StackName}-AsgArn

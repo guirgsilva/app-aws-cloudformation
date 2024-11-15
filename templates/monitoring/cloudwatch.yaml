@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudWatch Monitoring Configuration'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+
+  AlbArn:
+    Type: String
+    Description: ARN of the Application Load Balancer
+
+  AutoScalingGroupName:
+    Type: String
+    Description: Name of the Auto Scaling Group
+
+  DBInstanceIdentifier:
+    Type: String
+    Description: RDS Instance Identifier
+
+Resources:
+  # Dashboard
+  MonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub ${EnvironmentName}-dashboard
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${AlbArn}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "ALB Request Count"
+              }
+            },
+            {
+              "type": "metric",
+              "properties": {
+                "metrics": [
+                  ["AWS/AutoScaling", "CPUUtilization", "AutoScalingGroupName", "${AutoScalingGroupName}"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "ASG CPU Utilization"
+              }
+            }
+          ]
+        }
+
+  # ALB Alarms
+  HighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${EnvironmentName}-high-latency
+      AlarmDescription: Alarm if latency exceeds threshold
+      MetricName: TargetResponseTime
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref AlbArn
+
+  Error5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${EnvironmentName}-5xx-errors
+      AlarmDescription: Alarm on 5xx errors
+      MetricName: HTTPCode_Target_5XX_Count
+      Namespace: AWS/ApplicationELB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref AlbArn
+
+  # ASG Alarms
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${EnvironmentName}-high-cpu
+      AlarmDescription: Alarm if CPU exceeds 80%
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroupName
+
+  # RDS Alarms
+  HighDBCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${EnvironmentName}-db-high-cpu
+      AlarmDescription: Alarm if database CPU exceeds 80%
+      MetricName: CPUUtilization
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref DBInstanceIdentifier
+
+  # Memory Usage Alarm
+  HighMemoryUsageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${EnvironmentName}-high-memory
+      AlarmDescription: Alarm if memory usage exceeds 80%
+      MetricName: MemoryUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroupName
+
+Outputs:
+  DashboardName:
+    Description: Name of the CloudWatch Dashboard
+    Value: !Ref MonitoringDashboard
+    Export:
+      Name: !Sub ${AWS::StackName}-DashboardName
+
+  HighCPUAlarmArn:
+    Description: ARN of the High CPU Alarm
+    Value: !GetAtt HighCPUAlarm.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-HighCPUAlarmArn
+
+  HighDBCPUAlarmArn:
+    Description: ARN of the High DB CPU Alarm
+    Value: !GetAtt HighDBCPUAlarm.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-HighDBCPUAlarmArn

@@ -1,0 +1,129 @@
+{
+    "Exports": [
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35/9e5dc9f0-a2e2-11ef-9fba-1264f97eef49",
+            "Name": "web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35-AsgArn",
+            "Value": "arn:aws:autoscaling:us-east-1:043309321272:autoScalingGroup:*:autoScalingGroupName/dev-asg"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35/9e5dc9f0-a2e2-11ef-9fba-1264f97eef49",
+            "Name": "web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35-AsgName",
+            "Value": "dev-asg"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35/9e5dc9f0-a2e2-11ef-9fba-1264f97eef49",
+            "Name": "web-infrastructure-dev-AutoScalingStack-RDNRUIHOET35-LaunchTemplateId",
+            "Value": "lt-0f9e5d45ae01d2deb"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev/5ca998c0-a2df-11ef-a36b-0e984e446999",
+            "Name": "web-infrastructure-dev-DatabaseEndpoint",
+            "Value": "web-infrastructure-dev-databasestack-qt-dbinstance-ossprqex1knh.czy8swk0qxxa.us-east-1.rds.amazonaws.com"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP/d130fcb0-a2df-11ef-abc4-0e390cb2a333",
+            "Name": "web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP-DBEndpoint",
+            "Value": "web-infrastructure-dev-databasestack-qt-dbinstance-ossprqex1knh.czy8swk0qxxa.us-east-1.rds.amazonaws.com"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP/d130fcb0-a2df-11ef-abc4-0e390cb2a333",
+            "Name": "web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP-DBInstanceIdentifier",
+            "Value": "web-infrastructure-dev-databasestack-qt-dbinstance-ossprqex1knh"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP/d130fcb0-a2df-11ef-abc4-0e390cb2a333",
+            "Name": "web-infrastructure-dev-DatabaseStack-QT4SQMAAJ5EP-DBPort",
+            "Value": "3306"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev/5ca998c0-a2df-11ef-a36b-0e984e446999",
+            "Name": "web-infrastructure-dev-LoadBalancerDNS",
+            "Value": "dev-alb-1836250842.us-east-1.elb.amazonaws.com"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W/d1359090-a2df-11ef-9128-0e29bdd92d97",
+            "Name": "web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W-AlbArn",
+            "Value": "arn:aws:elasticloadbalancing:us-east-1:043309321272:loadbalancer/app/dev-alb/4428ccbb79650510"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W/d1359090-a2df-11ef-9128-0e29bdd92d97",
+            "Name": "web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W-AlbDnsName",
+            "Value": "dev-alb-1836250842.us-east-1.elb.amazonaws.com"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W/d1359090-a2df-11ef-9128-0e29bdd92d97",
+            "Name": "web-infrastructure-dev-LoadBalancerStack-1QOI8HENQRE3W-DefaultTargetGroupArn",
+            "Value": "arn:aws:elasticloadbalancing:us-east-1:043309321272:targetgroup/dev-default-tg/1f3b0904f323f0e7"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-MonitoringStack-G7YG781G2NAP/b328f850-a2e2-11ef-8f1a-0ec9635c0aa1",
+            "Name": "web-infrastructure-dev-MonitoringStack-G7YG781G2NAP-DashboardName",
+            "Value": "dev-dashboard"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-MonitoringStack-G7YG781G2NAP/b328f850-a2e2-11ef-8f1a-0ec9635c0aa1",
+            "Name": "web-infrastructure-dev-MonitoringStack-G7YG781G2NAP-HighCPUAlarmArn",
+            "Value": "arn:aws:cloudwatch:us-east-1:043309321272:alarm:dev-high-cpu"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-MonitoringStack-G7YG781G2NAP/b328f850-a2e2-11ef-8f1a-0ec9635c0aa1",
+            "Name": "web-infrastructure-dev-MonitoringStack-G7YG781G2NAP-HighDBCPUAlarmArn",
+            "Value": "arn:aws:cloudwatch:us-east-1:043309321272:alarm:dev-db-high-cpu"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-NetworkStack-WQIXF8EOKI64/5e3d5820-a2df-11ef-8ce6-0afff224c7e9",
+            "Name": "web-infrastructure-dev-NetworkStack-WQIXF8EOKI64-PrivateSubnets",
+            "Value": "subnet-041f99de7683ddb56,subnet-06bae09fbcfc0be78"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-NetworkStack-WQIXF8EOKI64/5e3d5820-a2df-11ef-8ce6-0afff224c7e9",
+            "Name": "web-infrastructure-dev-NetworkStack-WQIXF8EOKI64-PublicSubnets",
+            "Value": "subnet-0e7f5e99b175ec76e,subnet-057a1cb6194db138d"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-NetworkStack-WQIXF8EOKI64/5e3d5820-a2df-11ef-8ce6-0afff224c7e9",
+            "Name": "web-infrastructure-dev-NetworkStack-WQIXF8EOKI64-VpcId",
+            "Value": "vpc-0856da8b9ac72f55b"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev/5ca998c0-a2df-11ef-a36b-0e984e446999",
+            "Name": "web-infrastructure-dev-PrivateSubnets",
+            "Value": "subnet-041f99de7683ddb56,subnet-06bae09fbcfc0be78"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev/5ca998c0-a2df-11ef-a36b-0e984e446999",
+            "Name": "web-infrastructure-dev-PublicSubnets",
+            "Value": "subnet-0e7f5e99b175ec76e,subnet-057a1cb6194db138d"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4/bc814590-a2df-11ef-98ac-0affe57288bb",
+            "Name": "web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4-AlbSecurityGroupId",
+            "Value": "sg-0be8bf62cb63c3813"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4/bc814590-a2df-11ef-98ac-0affe57288bb",
+            "Name": "web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4-AppSecurityGroupId",
+            "Value": "sg-0bfc6649e990e6824"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4/bc814590-a2df-11ef-98ac-0affe57288bb",
+            "Name": "web-infrastructure-dev-SecurityGroupsStack-100WMLG7EP3T4-DbSecurityGroupId",
+            "Value": "sg-0e8941451734baebd"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-StorageStack-2CUXBQRIR2MS/5e389d30-a2df-11ef-8ebb-12178398f891",
+            "Name": "web-infrastructure-dev-StorageStack-2CUXBQRIR2MS-BucketArn",
+            "Value": "arn:aws:s3:::dev-static-assets-043309321272"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev-StorageStack-2CUXBQRIR2MS/5e389d30-a2df-11ef-8ebb-12178398f891",
+            "Name": "web-infrastructure-dev-StorageStack-2CUXBQRIR2MS-BucketName",
+            "Value": "dev-static-assets-043309321272"
+        },
+        {
+            "ExportingStackId": "arn:aws:cloudformation:us-east-1:043309321272:stack/web-infrastructure-dev/5ca998c0-a2df-11ef-a36b-0e984e446999",
+            "Name": "web-infrastructure-dev-VpcId",
+            "Value": "vpc-0856da8b9ac72f55b"
+        }
+    ]
+}
